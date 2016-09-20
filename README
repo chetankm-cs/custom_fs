@@ -1,0 +1,97 @@
+-------------------------------------------------------------------------------
+	DESIGN LAB 2013 : A CONFIGURABLE FILESYSTEM
+-------------------------------------------------------------------------------
+The project aims to provide a unix like configurable filesystem which can be 
+used to implement custom allocation and deallocation policies(for Inodes and 
+blocks).
+
+-------------------------------------------------------------------------------
+	Dependencies
+-------------------------------------------------------------------------------
+*	gcc 4.7.3 or later
+*	fuse 2.6 or later 
+
+-------------------------------------------------------------------------------
+	Installation
+-------------------------------------------------------------------------------
+Configuration options are stored in the file src/filesystem.h.
+
+The following parameters are few of the important parameters that can be set for
+customizing the file sytem to the needs.
+*	FILESYTEM_PATH :the path of the filesystem to be formated or mount.The path 
+					can point to a file or a block device(pendrives & hardisks).
+*	FS_SIZE :Size of filesystem in bytes 
+*	BGROUP_SIZE :Filesystem is devided into block group 
+*	INODES :Maximum number of files that can be stored on the filesystem.
+			Directories are also considered as file.
+
+To install configure the filesystem.h accordint to the needs and run.
+	./make
+To format the filesystem 
+	./fs -f
+To mount a filesystem on a directory(empty)
+	./fs -s Directory_path
+
+-------------------------------------------------------------------------------
+	Design Details
+-------------------------------------------------------------------------------
+
+1.Data Structures :
+	Since the design tries to build a modular filesystem that can be extended 
+	for future use,the data structures can be tweaked.
+	
+	*	INODE :Contains file meta data including size,timestamps and type.
+			   Supports direct,indirect and double indirect block numbers.
+			   Supports two types of files 'f' regular file and 'd' directory
+			   file.
+	
+	*	SUPERBLOCK :Contains filesystem metadata including size,timestamps,free 
+				and used count of blocks and inodes.
+	
+	*	GSBLOCK :Contains block group metadata including block and inode counts
+			    and offset to the freeblocks bitmap and free inodes bitmap.
+	
+	*	DIR_ENTRY :directory entry to store the list of files in a directory 
+			   file.The structure is of variable length depending upon the 
+			   length of name of directory entry.
+	
+	*	FILE_DESCRIPTOR :Stores metadata of opened files namely inode_no,mode 
+				and count of processes excessing it.
+
+2.Fuse functions:
+	The filesystem is built around the fuse api so the file system can be accessed
+	by any other process without any code change.
+	The fuse functions have been implemented.However the fuse api contains
+	many more functions to improve the functionality of the filesytem.They can be 
+	implemented if needed.
+	*	getattr
+	*	readdir
+	*	open
+	*	read
+	* 	utimens
+	*	release
+	*	write
+	*	mknod
+	*	mkdir
+	*	rmdir
+	*	unlink
+
+3.Other features:
+	*	diskwrite and diskread :These function emulates the disk access by reading
+				or writing bytes in the integral multiple of BLOCK_SIZE. Since 
+				linux treat even devices as files the file system can be installed 
+				on a flash drive or a hardrive without any additional changes.
+	
+	*	alloc_block and alloc_inode :These functions can be changed to allocate 
+				custome allocation policy.Important information like file inode 
+				and parent inode are available.Currently a linear search is done 
+				across all the block groups to allocate a new block or inode.
+
+	*	get_block :gives a flat view to the file.Stores the data of the ith block 
+				in a file and Returns block number of the same.
+
+-------------------------------------------------------------------------------
+	Additional Notes
+-------------------------------------------------------------------------------
+The filesystem hasn't been tested on all systems and the fuse api is still 
+experimental,so you are advised not to store any critical data in the filesystem.
